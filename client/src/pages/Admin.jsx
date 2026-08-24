@@ -1032,7 +1032,7 @@ const toggleCouponStatus = async (coupon) => {
                       {item.image?.startsWith("/uploads") ? (
 
                         <img
-                          src={`http://localhost:5000${item.image}`}
+                         src={`https://management-trained-rabbit.abasthan.app${item.image}`}
                           alt={item.name}
                           className="w-16 h-16 object-cover rounded-lg mx-auto"
                         />

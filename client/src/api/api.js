@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+ baseURL: "https://management-trained-rabbit.abasthan.app/api",
 });
 
 // Automatically attach JWT Token

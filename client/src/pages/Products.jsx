@@ -108,7 +108,7 @@ function Products() {
       .replace(/\\/g, "/")
       .replace(/^\/+/, "");
 
-    return `http://localhost:5000/${cleanImage}`;
+    return `https://management-trained-rabbit.abasthan.app/${cleanImage}`;
   };
 
   return (
