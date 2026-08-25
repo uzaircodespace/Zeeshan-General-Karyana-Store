@@ -72,21 +72,63 @@ if (!fs.existsSync(uploadsPath)) {
 }
 
 // ========================================
-// CORS
+// CORS CONFIGURATION
 // ========================================
 
 const allowedOrigins = [
+  // Local development
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
+
+  // GitHub Pages production
+  "https://uzaircodespace.github.io",
 ];
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+
+    // Allow requests without Origin
+    // Example: Postman, server-to-server
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log("❌ CORS BLOCKED:", origin);
+
+    return callback(
+      new Error("Not allowed by CORS")
+    );
+  },
+
+  credentials: true,
+
+  methods: [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+  ],
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+  ],
+
+  optionsSuccessStatus: 204,
+};
+
+// Apply CORS globally
+app.use(cors(corsOptions));
+
+// Explicitly handle preflight requests
+app.options("*", cors(corsOptions));
 
 // ========================================
 // BODY PARSER
@@ -105,7 +147,15 @@ app.use(
 // ========================================
 
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.originalUrl}`);
+  console.log(
+    `📡 ${req.method} ${req.originalUrl}`
+  );
+
+  console.log(
+    "🌍 Origin:",
+    req.headers.origin || "No Origin"
+  );
+
   next();
 });
 
@@ -187,15 +237,40 @@ app.use(
 );
 
 console.log("✅ Payment routes registered");
+// ========================================
+// HEALTH CHECK
+// ========================================
+
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Backend API is working",
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // ========================================
 // HOME ROUTE
 // ========================================
 
 app.get("/", (req, res) => {
-  res.send(
-    "🚀 General Karyana Store Backend is Running..."
-  );
+  res.json({
+    success: true,
+    message:
+      "🚀 General Karyana Store Backend is Running...",
+  });
+});
+
+// ========================================
+// API HEALTH CHECK
+// ========================================
+
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Backend API is working",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // ========================================
@@ -235,7 +310,8 @@ app.get("/test123", (req, res) => {
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: `Route not found: ${req.method} ${req.originalUrl}`,
+    message:
+      `Route not found: ${req.method} ${req.originalUrl}`,
   });
 });
 
@@ -250,10 +326,19 @@ app.use((err, req, res, next) => {
     depth: null,
   });
 
+  // CORS error
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({
+      success: false,
+      message: "CORS: Origin not allowed",
+    });
+  }
+
   res.status(500).json({
     success: false,
     message:
-      err.message || "Internal Server Error",
+      err.message ||
+      "Internal Server Error",
   });
 });
 
@@ -261,38 +346,108 @@ app.use((err, req, res, next) => {
 // SERVER
 // ========================================
 
-const PORT = process.env.PORT || 5000;
+const PORT =
+  process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
-  console.log("========================================");
-  console.log(
-    `🚀 Server running on http://localhost:${PORT}`
-  );
-  console.log("📦 Products API: /api/products");
-  console.log("🔐 Auth API: /api/auth");
-  console.log("📦 Orders API: /api/orders");
-  console.log("📊 Dashboard API: /api/dashboard");
-  console.log("👥 Customers API: /api/customers");
-  console.log("📄 Invoice API: /api/invoice");
-  console.log("📈 Reports API: /api/reports");
-  console.log("🎟️ Coupons API: /api/coupons");
-  console.log("💳 Payments API: /api/payments");
-  console.log("========================================");
-});
+const server = app.listen(
+  PORT,
+  () => {
+
+    console.log(
+      "========================================"
+    );
+
+    console.log(
+      `🚀 Server running on port ${PORT}`
+    );
+
+    console.log(
+      "🌐 Allowed frontend:"
+    );
+
+    allowedOrigins.forEach(
+      (origin) => {
+        console.log(`   ✅ ${origin}`);
+      }
+    );
+
+    console.log(
+      "========================================"
+    );
+
+    console.log(
+      "📦 Products API: /api/products"
+    );
+
+    console.log(
+      "🔐 Auth API: /api/auth"
+    );
+
+    console.log(
+      "📦 Orders API: /api/orders"
+    );
+
+    console.log(
+      "📊 Dashboard API: /api/dashboard"
+    );
+
+    console.log(
+      "👥 Customers API: /api/customers"
+    );
+
+    console.log(
+      "📄 Invoice API: /api/invoice"
+    );
+
+    console.log(
+      "📈 Reports API: /api/reports"
+    );
+
+    console.log(
+      "🎟️ Coupons API: /api/coupons"
+    );
+
+    console.log(
+      "💳 Payments API: /api/payments"
+    );
+
+    console.log(
+      "❤️ Health API: /api/health"
+    );
+
+    console.log(
+      "========================================"
+    );
+  }
+);
 
 // ========================================
 // SERVER ERROR
 // ========================================
 
-server.on("error", (error) => {
-  if (error.code === "EADDRINUSE") {
-    console.error(
-      `❌ Port ${PORT} is already in use.`
-    );
-    console.error(
-      "👉 Stop the previous server and start again."
-    );
-  } else {
-    console.error("❌ Server Error:", error);
+server.on(
+  "error",
+  (error) => {
+
+    if (
+      error.code === "EADDRINUSE"
+    ) {
+
+      console.error(
+        `❌ Port ${PORT} is already in use.`
+      );
+
+      console.error(
+        "👉 Stop the previous server and start again."
+      );
+
+    } else {
+
+      console.error(
+        "❌ Server Error:",
+        error
+      );
+
+    }
   }
-});
+);
